@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Random Poetry Academy</title>
+
+  <!-- 8-bit style font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #050506;
+      --panel: #111111;
+      --text: #f5f5f5;
+      --border: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Press Start 2P", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .title-image {
+      max-width: 90vw;
+      image-rendering: pixelated;
+      margin-bottom: 10px;
+    }
+
+    #introScreen {
+      margin-top: 20px;
+      max-width: 900px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    #introScreen p {
+      max-width: 640px;
+      margin: 10px auto;
+      line-height: 1.6;
+    }
+
+    .profRow {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+
+    .profBlock {
+      text-align: center;
+    }
+
+    .profBlock img {
+      width: 96px;
+      height: 96px;
+      image-rendering: pixelated;
+      border: 3px solid var(--border);
+      background: #ffffff;
+    }
+
+    .profBlock div {
+      margin-top: 6px;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: 3px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      image-rendering: pixelated;
+    }
+
+    button:hover {
+      background: #333333;
+    }
+
+    #enterBtn {
+      margin-top: 18px;
+    }
+
+    #poetryScreen {
+      margin-top: 20px;
+      max-width: 720px;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .card {
+      border: 3px solid var(--border);
+      padding: 16px;
+      background: var(--panel);
+      box-shadow: 0 0 0 3px #222;
+      width: 100%;
+    }
+
+    #speakerLabel {
+      margin-bottom: 8px;
+      letter-spacing: 0.15em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      font-family: "Press Start 2P", monospace;
+      font-size: 9px;
+      line-height: 1.6;
+      text-align: left;
+    }
+
+    #generateBtn {
+      margin-top: 10px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AUDIO (files must be in the same folder as this HTML) -->
+  <audio id="clickEnter" src="click-enter.wav" preload="auto"></audio>
+  <audio id="clickPoem" src="click-poem.wav" preload="auto"></audio>
+  <audio id="bgm" src="dark_academia_haunted_university_varied.wav" preload="auto" loop></audio>
+
+
+  <!-- INTRO SCREEN -->
+  <div id="introScreen" class="center">
+    <img class="title-image" src="random-poetry-academy-title.png" alt="Random Poetry Academy" />
+
+    <div class="profRow">
+      <div class="profBlock">
+        <img src="professor-vince.png" alt="Professor Vince" />
+        <div>PROF. VINCE</div>
+      </div>
+
+      <div class="profBlock">
+        <img src="professor-gemma.png" alt="Professor Gemma" />
+        <div>PROF. GEMMA</div>
+      </div>
+    </div>
+
+    <p>
+      YOU ARE A NEW STUDENT AT THE<br>
+      RANDOM POETRY ACADEMY.
+    </p>
+    <p>
+      PROFESSOR VINCE AND PROFESSOR GEMMA<br>
+      CONJURE STRANGE NEW POEMS EVERY DAY.<br>
+      NO ONE KNOWS HOW THE MACHINE WORKS.<br>
+      THAT IS PART OF THE CURRICULUM.
+    </p>
+    <p>
+      CLICK TO ENTER THE SCHOOL AND RECEIVE<br>
+      YOUR FIRST IMPOSSIBLE POEM.
+    </p>
+
+    <button id="enterBtn">ENTER THE ACADEMY</button>
+  </div>
+
+  <!-- POETRY SCREEN -->
+  <div id="poetryScreen" class="hidden center">
+    <div class="card">
+      <div id="speakerLabel"></div>
+      <pre id="poemOutput"></pre>
+      <button id="generateBtn">NEW POEM</button>
+    </div>
+  </div>
+
+  <script>
+    // ---------- SOUND HELPERS ----------
+    function playSound(id) {
+      const audio = document.getElementById(id);
+      if (!audio) return;
+      try {
+        audio.currentTime = 0;
+        audio.play();
+      } catch (e) {
+        // ignore autoplay issues
+      }
+    }
+
+    function startBgm() {
+      const bgm = document.getElementById("bgm");
+      if (!bgm) return;
+      try {
+        bgm.play();
+      } catch (e) {}
+    }
+
+    // ---------- WORD BANKS ----------
+    const subjects = [
+      "A TANGLED SHOELACE","THE SOCKED FOOT","A HALF-ASLEEP RADIATOR",
+      "THE NIGHT BUS DRIVER","A FLUORESCENT TUBE","AN UNPAID INVOICE",
+      "THE MCDONALD'S TRAY","A LUKEWARM COFFEE","THE LAST CIGARETTE",
+      "A PLASTIC BAG","THE ELEVATOR MIRROR","A CRACKED PHONE SCREEN",
+      "THE UNREAD NEWSPAPER","A YOGHURT LID","THE VENDING MACHINE",
+      "A FLICKERING CURSOR"
+    ];
+
+    const verbs = [
+      "LECTURES","FORGETS","VIBRATES WITH","WHISPERS ABOUT","HALLUCINATES",
+      "TRIES TO ARCHIVE","REHEARSES","DOCUMENTS","ACCIDENTALLY WORSHIPS",
+      "MISFILES","DRIPS TOWARD","LOOPS BACK TO","CLICKS IN","DENIES",
+      "CONFUSES ITSELF WITH","RE-ENACTS"
+    ];
+
+    const objects = [
+      "THE CONCEPT OF MONDAY","A MINOR CATASTROPHE","SOMEBODY ELSE'S NOSTALGIA",
+      "AN UNFINISHED APOLOGY","LATE CAPITALISM IN PYJAMAS","YOUR SEARCH HISTORY",
+      "A QUEUE AT THE PHARMACY","YESTERDAY'S ANXIETY",
+      "THE SOFT HUM OF DATA CENTERS","A FORGOTTEN PASSWORD",
+      "A YOUTUBE TUTORIAL","THE IDEA OF HOME","THE WRONG TRAIN",
+      "A GHOST INBOX","THE SMELL OF WET CONCRETE","A MISSING RECEIPT"
+    ];
+
+    const modifiers = [
+      "IN 8-BIT SILENCE","UNDER FLUORESCENT WEATHER",
+      "WHILE EVERYONE PRETENDS NOT TO NOTICE","WITH SUSPICIOUS ENTHUSIASM",
+      "LIKE AN OLD LOADING SCREEN","IN SLOW, BUFFERING TIME",
+      "BETWEEN TWO NOTIFICATIONS","AS IF THE FLOOR WERE LISTENING",
+      "IN BORROWED DAYLIGHT","WITH TOO MUCH SINCERITY",
+      "LIKE A GLITCH IN THE TIMETABLE","IN A LANGUAGE NO ONE UPDATED",
+      "ON THE WRONG SIDE OF THE ALGORITHM","WITH A FAINT SMELL OF FRIES",
+      "INSIDE A LOOPING DREAM","BETWEEN REFRESHES"
+    ];
+
+    const imperatives = [
+      "WRITE THIS DOWN, THEN LOSE THE PAGE.",
+      "FOLD THIS POEM INTO YOUR LEFT SHOE.",
+      "PERFORM THIS IN SECRET AND DENY EVERYTHING.",
+      "TELL NOBODY WHICH LINE WAS TRUE.",
+      "PRINT THIS AND STAPLE IT TO A BUS TICKET.",
+      "TRANSLATE THIS INTO A LANGUAGE YOU DO NOT SPEAK.",
+      "EMAIL THIS TO YOURSELF AND NEVER OPEN IT.",
+      "READ THIS ALOUD TO A VENDING MACHINE.",
+      "COPY THIS WHILE STANDING IN A QUEUE.",
+      "TEXT THE LAST LINE TO THE WRONG PERSON.",
+      "ERASE YOUR FAVOURITE WORD FROM THIS POEM.",
+      "HIDE THIS IN A LIBRARY BOOK."
+    ];
+
+    const glitches = [
+      "▒▒▒","███","[CONNECTION LOST]","<BUFFERING>",
+      "???","///","<UNDEFINED>","[REDACTED]"
+    ];
+
+    const asidesVince = [
+      "VINCE COUGHS AND CALLS THIS 'MINOR RESEARCH'.",
+      "VINCE INSISTS THIS IS TECHNICALLY A LOVE POEM.",
+      "VINCE SAYS: 'DON'T FIX THE LINE, FIX THE READER.'",
+      "VINCE SCRIBBLES: 'GOOD. KEEP THE GLITCH.'"
+    ];
+
+    const asidesGemma = [
+      "GEMMA UNDERLINES THE SILENCE, NOT THE WORDS.",
+      "GEMMA SAYS: 'THIS BELONGS IN A SUPERMARKET.'",
+      "GEMMA WHISPERS: 'THE POEM IS THE ERROR MESSAGE.'",
+      "GEMMA CIRCLES NOTHING AND CALLS IT THE KEY IMAGE."
+    ];
+
+    function r(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function maybeGlitch(text) {
+      if (Math.random() < 0.3) {
+        const g = r(glitches);
+        return Math.random() < 0.5 ? g + " " + text : text + " " + g;
+      }
+      return text;
+    }
+
+    function structureScore() {
+      const l1 = "TAKE " + r(subjects) + ",";
+      const l2 = "LET IT " + r(verbs) + " " + r(objects) + ",";
+      const l3 = "DO THIS " + r(modifiers) + ".";
+      const l4 = r(imperatives);
+      return [l1, l2, l3, l4].map(maybeGlitch).join("\n");
+    }
+
+    function structureBeat() {
+      const l1 = r(subjects) + " " + r(verbs) + " " + r(objects) + ".";
+      const l2 = r(subjects) + " WATCHES FROM THE DOORWAY.";
+      const l3 = "NOBODY UPDATES THE SITUATION " + r(modifiers) + ".";
+      const l4 = r(imperatives);
+      return [l1, l2, l3, l4].map(maybeGlitch).join("\n");
+    }
+
+    function structureFragment() {
+      const l1 = r(subjects);
+      const l2 = r(verbs) + " " + r(objects);
+      const l3 = r(modifiers);
+      const l4 = r(glitches) + " " + r(imperatives);
+      return [l1, l2, l3, l4].join("\n");
+    }
+
+    const structures = [structureScore, structureBeat, structureFragment];
+
+    // ---------- SCREEN + BUTTONS ----------
+    const introScreen = document.getElementById("introScreen");
+    const poetryScreen = document.getElementById("poetryScreen");
+    const enterBtn = document.getElementById("enterBtn");
+    const generateBtn = document.getElementById("generateBtn");
+
+    enterBtn.addEventListener("click", () => {
+      playSound("clickEnter");
+      startBgm();
+      introScreen.classList.add("hidden");
+      poetryScreen.classList.remove("hidden");
+      generatePoem();
+    });
+
+    generateBtn.addEventListener("click", () => {
+      playSound("clickPoem");
+      generatePoem();
+    });
+
+    // ---------- POEM GENERATION ----------
+    function generatePoem() {
+      const isVince = Math.random() < 0.5;
+      const speakerLabel = document.getElementById("speakerLabel");
+      const poemOutput = document.getElementById("poemOutput");
+
+      const speakerName = isVince ? "PROFESSOR VINCE" : "PROFESSOR GEMMA";
+      const aside = isVince ? r(asidesVince) : r(asidesGemma);
+
+      speakerLabel.textContent = speakerName + " CLEARS THEIR THROAT:";
+
+      const body = r(structures)();
+      poemOutput.textContent = body + "\n\n// " + aside;
+    }
+  </script>
+</body>
+</html>
