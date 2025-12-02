@@ -50,6 +50,7 @@
       max-width: 90vw;
       image-rendering: pixelated;
       margin-bottom: 10px;
+      cursor: pointer; /* click the image to enter */
     }
 
     #introScreen {
@@ -138,6 +139,7 @@
       font-size: 9px;
       line-height: 1.6;
       text-align: left;
+      min-height: 8em; /* keeps box from jumping while animating */
     }
 
     #generateBtn {
@@ -155,12 +157,17 @@
   <!-- AUDIO (files must be in the same folder as this HTML) -->
   <audio id="clickEnter" src="click-enter.wav" preload="auto"></audio>
   <audio id="clickPoem" src="click-poem.wav" preload="auto"></audio>
+  <!-- use whatever filename you actually have here: -->
   <audio id="bgm" src="dark_academia_haunted_university_varied.wav" preload="auto" loop></audio>
-
 
   <!-- INTRO SCREEN -->
   <div id="introScreen" class="center">
-    <img class="title-image" src="random-poetry-academy-title.png" alt="Random Poetry Academy" />
+    <img
+      class="title-image"
+      id="titleImage"
+      src="random-poetry-academy-title.png"
+      alt="Random Poetry Academy"
+    />
 
     <div class="profRow">
       <div class="profBlock">
@@ -185,8 +192,8 @@
       THAT IS PART OF THE CURRICULUM.
     </p>
     <p>
-      CLICK TO ENTER THE SCHOOL AND RECEIVE<br>
-      YOUR FIRST IMPOSSIBLE POEM.
+      CLICK THE TITLE OR BUTTON BELOW TO ENTER<br>
+      THE SCHOOL AND RECEIVE YOUR FIRST IMPOSSIBLE POEM.
     </p>
 
     <button id="enterBtn">ENTER THE ACADEMY</button>
@@ -331,43 +338,100 @@
 
     const structures = [structureScore, structureBeat, structureFragment];
 
+    // ---------- ANIMATED, COLOURED TEXT ----------
+    let currentAnimation = null;
+
+    function animateColoredText(element, text) {
+      // stop any previous animation
+      if (currentAnimation) {
+        clearInterval(currentAnimation);
+        currentAnimation = null;
+      }
+
+      element.innerHTML = "";
+      const chars = text.split("");
+      let i = 0;
+
+      currentAnimation = setInterval(() => {
+        if (i >= chars.length) {
+          clearInterval(currentAnimation);
+          currentAnimation = null;
+          return;
+        }
+        const ch = chars[i++];
+        if (ch === "\n") {
+          element.innerHTML += "<br>";
+        } else {
+          const hue = Math.floor(Math.random() * 360);
+          const span = `<span style="color:hsl(${hue},80%,70%)">${ch}</span>`;
+          element.innerHTML += span;
+        }
+      }, 15); // speed of typing
+    }
+
     // ---------- SCREEN + BUTTONS ----------
-    const introScreen = document.getElementById("introScreen");
-    const poetryScreen = document.getElementById("poetryScreen");
-    const enterBtn = document.getElementById("enterBtn");
-    const generateBtn = document.getElementById("generateBtn");
+   
+   // ---------- SCREEN + BUTTONS ----------
+const introScreen = document.getElementById("introScreen");
+const poetryScreen = document.getElementById("poetryScreen");
+const enterBtn = document.getElementById("enterBtn");
+const titleImage = document.getElementById("titleImage");
+const generateBtn = document.getElementById("generateBtn");
 
-    // Disable NEW POEM until you enter the academy
-    generateBtn.disabled = true;
+// Disable NEW POEM until entering
+generateBtn.disabled = true;
 
-    enterBtn.addEventListener("click", () => {
-      playSound("clickEnter");
-      startBgm();
+function enterAcademy() {
+  playSound("clickEnter");
+  startBgm();
+  introScreen.classList.add("hidden");
+  poetryScreen.classList.remove("hidden");
+  generateBtn.disabled = false;
+}
 
-      introScreen.classList.add("hidden");
-      poetryScreen.classList.remove("hidden");
+// Smooth scroll version (for clicking the image)
+function scrollToAcademy() {
+  playSound("clickEnter");
+  startBgm();
 
-      generateBtn.disabled = false; // now you can generate poems
-    });
+  // show academy without hiding intro
+  poetryScreen.classList.remove("hidden");
 
-    generateBtn.addEventListener("click", () => {
-      playSound("clickPoem");
-      generatePoem();
-    });
+  // smooth scroll to academy
+  poetryScreen.scrollIntoView({ behavior: "smooth" });
+
+  generateBtn.disabled = false;
+}
+
+// BUTTON enters instantly
+enterBtn.addEventListener("click", enterAcademy);
+
+// IMAGE scrolls to academy
+titleImage.addEventListener("click", scrollToAcademy);
+
+generateBtn.addEventListener("click", () => {
+  playSound("clickPoem");
+  generatePoem();
+});
+
 
     // ---------- POEM GENERATION ----------
-    function generatePoem() {
-      const isVince = Math.random() < 0.5;
-      const speakerLabel = document.getElementById("speakerLabel");
-      const poemOutput = document.getElementById("poemOutput");
+   function generatePoem() {
+  const isVince = Math.random() < 0.5;
+  const speakerLabel = document.getElementById("speakerLabel");
+  const poemOutput = document.getElementById("poemOutput");
 
-      const speakerName = isVince ? "PROFESSOR VINCE" : "PROFESSOR GEMMA";
-      const aside = isVince ? r(asidesVince) : r(asidesGemma);
+  const speakerName = isVince ? "PROFESSOR VINCE" : "PROFESSOR GEMMA";
+  const aside = isVince ? r(asidesVince) : r(asidesGemma);
 
-      speakerLabel.textContent = speakerName + " CLEARS THEIR THROAT:";
+  // gender-correct throat-clearing
+  const throat = isVince ? "CLEARS HIS THROAT:" : "CLEARS HER THROAT:";
+  speakerLabel.textContent = speakerName + " " + throat;
 
-      const body = r(structures)();
-      poemOutput.textContent = body + "\n\n// " + aside;
+  const body = r(structures)();
+  const fullText = body + "\n\n// " + aside;
+
+  animateColoredText(poemOutput, fullText);
     }
   </script>
 </body>
