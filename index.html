@@ -99,8 +99,14 @@
       image-rendering: pixelated;
     }
 
-    button:hover {
+    button:hover:enabled {
       background: #333333;
+    }
+
+    /* visual for disabled NEW POEM */
+    button:disabled {
+      opacity: 0.4;
+      cursor: default;
     }
 
     #enterBtn {
@@ -186,7 +192,7 @@
     <button id="enterBtn">ENTER THE ACADEMY</button>
   </div>
 
-  <!-- POETRY SCREEN -->
+  <!-- POETRY SCREEN (HIDDEN AT START) -->
   <div id="poetryScreen" class="hidden center">
     <div class="card">
       <div id="speakerLabel"></div>
@@ -331,12 +337,17 @@
     const enterBtn = document.getElementById("enterBtn");
     const generateBtn = document.getElementById("generateBtn");
 
+    // Disable NEW POEM until you enter the academy
+    generateBtn.disabled = true;
+
     enterBtn.addEventListener("click", () => {
       playSound("clickEnter");
       startBgm();
+
       introScreen.classList.add("hidden");
       poetryScreen.classList.remove("hidden");
-      generatePoem();
+
+      generateBtn.disabled = false; // now you can generate poems
     });
 
     generateBtn.addEventListener("click", () => {
